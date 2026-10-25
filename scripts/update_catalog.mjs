@@ -27,14 +27,14 @@ async function getJSON(url, opts = {}, minGap = 520) {
     lastCall = Date.now();
     try {
       const res = await fetch(url, { ...opts, headers: { 'User-Agent': 'SeriesBox student project', Accept: 'application/json', ...(opts.headers || {}) } });
-      if (res.status === 404) return null;
+      if (res.status === 404 && !opts.body) return null;
       if (res.status === 429 || res.status >= 500) {
         const ra = Number(res.headers.get('retry-after')) || 2 ** attempt * 2;
         log(`  ${res.status} on ${url.slice(0, 70)}, retrying in ${ra}s`);
         await sleep(ra * 1000);
         continue;
       }
-      if (!res.ok) throw new Error(`${res.status} ${url}`);
+      if (!res.ok) throw new Error(`${res.status} ${url}: ${(await res.text()).slice(0, 300)}`);
       return await res.json();
     } catch (e) {
       if (attempt === 5) throw e;
@@ -131,23 +131,24 @@ const isSequel = (m) => m.relations.edges.some((e) => e.relationType === 'PREQUE
 async function fetchAnime() {
   const seedAnime = SEED.filter((t) => t.kind === 'anime');
   const byId = new Map();
-  // 1) Refresh the seed (aliases: 20 per request).
-  for (let i = 0; i < seedAnime.length; i += 20) {
-    const chunk = seedAnime.slice(i, i + 20);
-    const q = `{ ${chunk.map((t, j) => `a${j}: Media(${t.anilistId ? `id: ${t.anilistId}` : `search: ${JSON.stringify(t.search || t.title)}`}, type: ANIME) { ${AL_FIELDS} }`).join('\n')} }`;
-    const data = await anilist(q);
-    chunk.forEach((t, j) => { if (data[`a${j}`]) byId.set(t.id, data[`a${j}`]); });
-    log(`AniList seed ${Math.min(i + 20, seedAnime.length)}/${seedAnime.length}`);
+  // 1) Refresh the seed, one title per request (a wrong id must not break the batch).
+  for (const t of seedAnime) {
+    try {
+      const data = await anilist(`query ($id: Int, $s: String) { Media(id: $id, search: $s, type: ANIME) { ${AL_FIELDS} } }`, t.anilistId ? { id: t.anilistId } : { s: t.search || t.title });
+      if (data.Media) byId.set(t.id, data.Media);
+    } catch (e) { log(`  AniList miss for ${t.id}: ${e.message.slice(0, 120)}`); }
   }
+  log(`AniList seed: ${byId.size}/${seedAnime.length}`);
   // 2) Popular all-time, trending now, and this season.
   const { season, year } = seasonNow();
   const lists = [];
-  for (let page = 1; page <= 4; page++) lists.push(['popular', `Page(page: ${page}, perPage: 50) { media(type: ANIME, sort: POPULARITY_DESC, format_in: [TV, ONA], isAdult: false) { ${AL_FIELDS} } }`]);
-  lists.push(['trending', `Page(page: 1, perPage: 50) { media(type: ANIME, sort: TRENDING_DESC, format_in: [TV, ONA], isAdult: false) { ${AL_FIELDS} } }`]);
-  lists.push(['season', `Page(page: 1, perPage: 30) { media(type: ANIME, season: ${season}, seasonYear: ${year}, sort: POPULARITY_DESC, format_in: [TV, ONA], isAdult: false) { ${AL_FIELDS} } }`]);
+  for (let page = 1; page <= 8; page++) lists.push(['popular', `Page(page: ${page}, perPage: 25) { media(type: ANIME, sort: POPULARITY_DESC, format_in: [TV, ONA], isAdult: false) { ${AL_FIELDS} } }`]);
+  lists.push(['trending', `Page(page: 1, perPage: 25) { media(type: ANIME, sort: TRENDING_DESC, format_in: [TV, ONA], isAdult: false) { ${AL_FIELDS} } }`]);
+  lists.push(['season', `Page(page: 1, perPage: 25) { media(type: ANIME, season: ${season}, seasonYear: ${year}, sort: POPULARITY_DESC, format_in: [TV, ONA], isAdult: false) { ${AL_FIELDS} } }`]);
   const extra = [];
   for (const [name, q] of lists) {
-    const data = await anilist(`{ ${q} }`);
+    let data;
+    try { data = await anilist(`{ ${q} }`); } catch (e) { log(`  AniList ${name} failed: ${e.message.slice(0, 200)}`); continue; }
     data.Page.media.forEach((m) => extra.push({ m, from: name }));
     log(`AniList ${name}: ${data.Page.media.length}`);
   }
