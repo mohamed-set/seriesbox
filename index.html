@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SeriesBox · Track, rate & discover series and anime</title>
+  <meta name="description" content="A Letterboxd-style social app for TV series and anime, with an AI recommender.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23ff2e63'/><rect x='14' y='18' width='36' height='26' rx='4' fill='none' stroke='white' stroke-width='5'/><path d='M24 52h16' stroke='white' stroke-width='5' stroke-linecap='round'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="nav"></header>
+  <main id="app"></main>
+  <nav id="tabbar"></nav>
+  <div id="search" role="dialog" aria-label="Search">
+    <div class="search-box">
+      <div class="search-field"><input id="search-input" placeholder="Search titles, genres, vibes (try “time travel”)…" autocomplete="off"><button class="close ib ghost" aria-label="Close">✕</button></div>
+      <div id="search-results"></div>
+    </div>
+  </div>
+  <footer class="foot">SeriesBox · AI for Business project · Posters via TVmaze &amp; AniList public APIs · Community data is simulated for the demo</footer>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
