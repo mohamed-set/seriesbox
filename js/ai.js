@@ -47,9 +47,16 @@ TITLES.forEach((t, i) => {
   VEC[t.id] = normalize(v);
 });
 
+// Vectors are never mutated after creation, so their sizes can be cached.
+const SIZE = new WeakMap();
+const size = (o) => {
+  let n = SIZE.get(o);
+  if (n === undefined) { n = 0; for (const k in o) n++; SIZE.set(o, n); }
+  return n;
+};
 export function cosine(a, b) {
   let s = 0;
-  const [x, y] = Object.keys(a).length < Object.keys(b).length ? [a, b] : [b, a];
+  const [x, y] = size(a) < size(b) ? [a, b] : [b, a];
   for (const k in x) if (y[k]) s += x[k] * y[k];
   return s;
 }
@@ -85,10 +92,15 @@ export function allLikes(me) {
   return { ...COMMUNITY.likes, me: me.likes };
 }
 
+const MEANS = new WeakMap();
 const mean = (o) => {
+  if (MEANS.has(o)) return MEANS.get(o);
   const v = Object.values(o);
-  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 3.5;
+  const m = v.length ? v.reduce((a, b) => a + b, 0) / v.length : 3.5;
+  if (Object.isFrozen(o) || COMMUNITY_SETS.has(o)) MEANS.set(o, m);
+  return m;
 };
+const COMMUNITY_SETS = new Set(Object.values(COMMUNITY.ratings));
 
 /** Taste compatibility between two rating maps: shrunk Pearson-like cosine on centred ratings, mapped to 0-100. */
 export function compatibility(ra, rb) {

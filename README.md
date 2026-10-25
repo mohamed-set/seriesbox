@@ -56,7 +56,7 @@ Press `/` anywhere to search (titles, genres or vibes such as “time travel”)
 3. **Collaborative filtering.** User-user k-NN: similarity = Pearson correlation on co-rated shows mixed with absolute agreement, shrunk by overlap size. It predicts your rating for unseen shows and powers the compatibility %. Item-item co-likes give “Fans also loved”.
 4. **Hybrid ranking.** `score = α·content + (1-α)·CF + quality prior`, with α decreasing as you rate more shows (cold start → content-heavy).
 5. **Charts** use the IMDb Bayesian weighted rating so a show with 2 ratings cannot beat one with 200.
-6. **Evaluation** (AI Lab): leave-one-out Hit Rate@10 on the community. On the seed catalog the hybrid reaches about 63% vs 25% for a popularity baseline.
+6. **Evaluation** (AI Lab): leave-one-out Hit Rate@10 on the community. On the live catalog (320 titles) the hybrid reaches about 54% vs 16% for a popularity baseline (content-only 50%, collaborative-only 23%).
 
 ## Project structure
 
