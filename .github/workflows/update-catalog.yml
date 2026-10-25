@@ -27,4 +27,5 @@ jobs:
           git add data/catalog.json
           git diff --cached --quiet && echo "No change" && exit 0
           git commit -m "Update catalog from TVmaze + AniList"
+          git pull --rebase origin main
           git push
