@@ -39,6 +39,7 @@ let current = null;
 function renderNav() {
   const p = store.me().profile;
   const path = location.hash || '#/';
+  $('#nav').classList.toggle('onboarding-nav', !p);
   $('#nav').innerHTML = `
     <a class="logo" href="#/"><span>SERIES</span>BOX</a>
     <nav class="links">${NAV.map(([h, l]) => `<a href="${h}" class="${(h === '#/' ? path === '#/' || path === '' : path.startsWith(h)) ? 'active' : ''}">${l}</a>`).join('')}</nav>

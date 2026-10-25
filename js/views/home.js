@@ -1,4 +1,4 @@
-import { TITLES } from '../data/titles.js';
+import { TITLES, CATALOG_INFO } from '../data/titles.js';
 import { COMMUNITY } from '../data/community.js';
 import * as store from '../store.js';
 import { recommend, similar, chartStats, neighbours, BY_ID } from '../ai.js';
@@ -24,6 +24,17 @@ export function home() {
   for (const id of recentLoves) {
     const sims = similar(id, 14).filter((s) => !seen(s.id));
     rows.push(row(`Because you loved <em>${esc(BY_ID[id].title)}</em>`, sims.map((s) => card(BY_ID[s.id], { match: s.match, why: s.why }))));
+  }
+
+  // Live data from the weekly catalog refresh: shows with an upcoming episode.
+  const now = Date.now();
+  const airing = TITLES.filter((t) => t.nextEpisode && new Date(t.nextEpisode.airsAt) > now - 864e5)
+    .sort((a, b) => new Date(a.nextEpisode.airsAt) - new Date(b.nextEpisode.airsAt));
+  const inDays = (iso) => { const d = Math.round((new Date(iso) - now) / 864e5); return d <= 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`; };
+  if (airing.length) rows.push(row('New episodes this week', airing.map((t) => card(t, { badge: `Ep ${t.nextEpisode.episode} · ${inDays(t.nextEpisode.airsAt)}` })), { sub: `<span class="live-dot"></span> Live from AniList${CATALOG_INFO.updated ? ` · updated ${new Date(CATALOG_INFO.updated).toLocaleDateString()}` : ''}` }));
+  else {
+    const ongoing = TITLES.filter((t) => t.status === 'Ongoing').sort((a, b) => b.popularity - a.popularity);
+    rows.push(row('Currently airing', ongoing.map((t) => card(t, { badge: 'On air' }))));
   }
 
   const byBuzz = (kind) => TITLES.filter((t) => t.kind === kind).sort((a, b) => stats[b.id].buzz - stats[a.id].buzz).map((t) => t.id);

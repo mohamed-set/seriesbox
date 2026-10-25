@@ -591,3 +591,5 @@ textarea:focus, input:focus { border-color: rgba(255, 46, 99, 0.6); outline: non
   .eval-row { grid-template-columns: 110px 1fr 50px; }
   .badges { grid-template-columns: repeat(2, 1fr); }
 }
+.live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--bad); margin-right: 4px; animation: blink 1.4s infinite; }
+.onboarding-nav .links { visibility: hidden; }
