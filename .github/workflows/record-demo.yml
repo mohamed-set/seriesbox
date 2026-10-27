@@ -1,0 +1,52 @@
+name: Record demo video
+
+# Records the ~5-minute SeriesBox demo (scripts/demo/record_demo.mjs) in a headless browser,
+# with real posters from TVmaze / AniList, and commits demo/seriesbox_demo.mp4 to the branch.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/demo/**'
+      - '.github/workflows/record-demo.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: record-demo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright, ffmpeg and fonts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-color-emoji >/dev/null
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Record
+        run: |
+          python3 -m http.server 8000 >/dev/null 2>&1 &
+          sleep 2
+          node scripts/demo/record_demo.mjs http://localhost:8000/ rec
+          mkdir -p demo
+          scripts/demo/make_video.sh rec demo/seriesbox_demo.mp4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seriesbox-demo
+          path: demo/seriesbox_demo.mp4
+      - name: Commit video
+        run: |
+          git config user.name "seriesbox-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add demo/seriesbox_demo.mp4
+          git commit -m "Record demo video"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"
